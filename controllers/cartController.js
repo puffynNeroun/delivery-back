@@ -35,12 +35,24 @@ const removeFromCart = async (req, res) => {
     const { productId } = req.body;
     try {
         const cart = await Cart.findOne({ user: req.user._id });
-        cart.items = cart.items.filter(item => item.product.toString() !== productId);
+        if (!cart) {
+            return res.status(404).json({ message: 'Cart not found' });
+        }
+
+        const productIndex = cart.items.findIndex(item => item.product.toString() === productId);
+        if (productIndex === -1) {
+            return res.status(404).json({ message: 'Product not found in cart' });
+        }
+
+        cart.items.splice(productIndex, 1);
         await cart.save();
-        res.json(cart);
+
+        res.status(200).json(cart);
     } catch (error) {
-        res.status(500).json({ message: 'Error removing from cart' });
+        res.status(500).json({ message: 'Error removing product from cart', error });
     }
 };
+
+
 
 module.exports = { getCart, addToCart, removeFromCart };

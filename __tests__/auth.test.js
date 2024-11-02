@@ -27,7 +27,9 @@ describe('Auth API', () => {
         expect(res.body).toHaveProperty('token');
     });
 
+    // auth.test.js
     it('should not register a user with an existing email', async () => {
+        // Создаем пользователя вручную перед тестом
         await User.create({
             name: 'Test User',
             email: 'testuser@example.com',
@@ -37,13 +39,15 @@ describe('Auth API', () => {
         const res = await request(app)
             .post('/api/auth/register')
             .send({
-                name: 'Test User',
+                name: 'Another User',
                 email: 'testuser@example.com',
                 password: 'password123',
             });
+
         expect(res.statusCode).toEqual(400);
-        expect(res.body.message).toBe('Пользователь с таким email уже существует');
+        expect(res.body.message).toBe('User already exists');
     });
+
 
     it('should login a user', async () => {
         await User.create({
