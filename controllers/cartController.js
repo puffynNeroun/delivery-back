@@ -5,7 +5,7 @@ const getCart = async (req, res) => {
         const cart = await Cart.findOne({ user: req.user._id }).populate('items.product');
         res.json(cart || { items: [] });
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching cart' });
+        res.status(500).json({ message: 'Ошибка при получении корзины' });
     }
 };
 
@@ -27,7 +27,7 @@ const addToCart = async (req, res) => {
         await cart.save();
         res.json(cart);
     } catch (error) {
-        res.status(500).json({ message: 'Error adding to cart' });
+        res.status(500).json({ message: 'Ошибка при добавлении в корзину' });
     }
 };
 
@@ -35,11 +35,14 @@ const removeFromCart = async (req, res) => {
     const { productId } = req.body;
     try {
         const cart = await Cart.findOne({ user: req.user._id });
+        if (!cart) {
+            return res.status(404).json({ message: 'Корзина не найдена' });
+        }
         cart.items = cart.items.filter(item => item.product.toString() !== productId);
         await cart.save();
         res.json(cart);
     } catch (error) {
-        res.status(500).json({ message: 'Error removing from cart' });
+        res.status(500).json({ message: 'Ошибка при удалении из корзины' });
     }
 };
 
