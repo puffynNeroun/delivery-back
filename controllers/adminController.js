@@ -1,11 +1,12 @@
 const Product = require('../models/Product');
+const User = require('../models/User');
 
-const getProducts = async (req, res) => {
+const getUsers = async (req, res) => {
     try {
-        const products = await Product.find();
-        res.json(products);
+        const users = await User.find();
+        res.json(users);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching products' });
+        res.status(500).json({ message: 'Error fetching users' });
     }
 };
 
@@ -20,4 +21,4 @@ const createProduct = async (req, res) => {
     }
 };
 
-module.exports = { getProducts, createProduct };
+module.exports = { getUsers, createProduct };
