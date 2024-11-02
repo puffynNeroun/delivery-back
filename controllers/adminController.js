@@ -1,7 +1,8 @@
-const Product = require('../models/Product');
 const User = require('../models/User');
+const Product = require('../models/Product');
+const Order = require('../models/Order');
 
-const getUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {
     try {
         const users = await User.find();
         res.json(users);
@@ -10,15 +11,27 @@ const getUsers = async (req, res) => {
     }
 };
 
-const createProduct = async (req, res) => {
+const deleteUser = async (req, res) => {
     try {
-        const { name, description, price, category, stock } = req.body;
-        const product = new Product({ name, description, price, category, stock });
-        await product.save();
-        res.status(201).json(product);
+        const user = await User.findById(req.params.id);
+        if (user) {
+            await user.remove();
+            res.json({ message: 'User removed' });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
     } catch (error) {
-        res.status(500).json({ message: 'Error creating product' });
+        res.status(500).json({ message: 'Error deleting user' });
     }
 };
 
-module.exports = { getUsers, createProduct };
+const getAllOrders = async (req, res) => {
+    try {
+        const orders = await Order.find().populate('user', 'name email');
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching orders' });
+    }
+};
+
+module.exports = { getAllUsers, deleteUser, getAllOrders };
