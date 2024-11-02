@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { addToCart, getCart, removeFromCart } = require('../controllers/cartController'); // Обновлены имена функций
+const { addToCart, getCart, removeFromCart } = require('../controllers/cartController'); // Исправленные названия функций
 const { protect } = require('../middleware/authMiddleware');
 
 // Добавление продукта в корзину
