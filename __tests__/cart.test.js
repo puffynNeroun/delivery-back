@@ -1,11 +1,17 @@
 const request = require('supertest');
-const app = require('../server');
+const { app, server } = require('../server'); // Импортируем app и server
+
+// Закрываем сервер после выполнения всех тестов
+afterAll(() => {
+    if (server) {
+        server.close();
+    }
+});
 
 describe('Cart API', () => {
     let userToken;
 
     beforeAll(async () => {
-        // Логинимся как обычный пользователь для получения токена
         const res = await request(app)
             .post('/api/auth/login')
             .send({
@@ -21,10 +27,9 @@ describe('Cart API', () => {
             .post('/api/cart/add')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
-                productId: 'productIdToAdd', // Укажите ID товара для добавления
+                productId: 'productIdToAdd',
                 quantity: 1,
             });
-
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty('items');
     });
@@ -33,7 +38,6 @@ describe('Cart API', () => {
         const res = await request(app)
             .get('/api/cart')
             .set('Authorization', `Bearer ${userToken}`);
-
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty('items');
     });
@@ -43,9 +47,8 @@ describe('Cart API', () => {
             .post('/api/cart/remove')
             .set('Authorization', `Bearer ${userToken}`)
             .send({
-                productId: 'productIdToRemove', // Укажите ID товара для удаления
+                productId: 'productIdToRemove',
             });
-
         expect(res.statusCode).toBe(200);
         expect(res.body).toHaveProperty('items');
     });

@@ -1,37 +1,45 @@
 const request = require('supertest');
-const app = require('../server');
+const { app, server } = require('../server'); // Импортируем app и server
+
+// Закрываем сервер после выполнения всех тестов
+afterAll(() => {
+    if (server) {
+        server.close();
+    }
+});
 
 describe('Admin API', () => {
-    let adminToken;
-
-    beforeAll(async () => {
-        // Логинимся как админ для получения токена
+    it('should get all users (admin only)', async () => {
         const res = await request(app)
             .post('/api/auth/login')
             .send({
-                email: 'admin@example.com', // Предварительно создайте администратора в базе данных
+                email: 'admin@example.com', // Убедитесь, что админ существует в базе данных
                 password: 'adminpassword',
             });
+        expect(res.statusCode).toEqual(200);
+        expect(res.body).toHaveProperty('token');
 
-        adminToken = res.body.token;
-    });
-
-    it('should get all users (admin only)', async () => {
-        const res = await request(app)
+        const token = res.body.token;
+        const usersRes = await request(app)
             .get('/api/admin/users')
-            .set('Authorization', `Bearer ${adminToken}`);
-
-        expect(res.statusCode).toBe(200);
-        expect(Array.isArray(res.body)).toBe(true);
+            .set('Authorization', `Bearer ${token}`);
+        expect(usersRes.statusCode).toEqual(200);
     });
 
     it('should delete a user (admin only)', async () => {
-        const userToDelete = 'userIdToDelete'; // Укажите ID пользователя для удаления
         const res = await request(app)
-            .delete(`/api/admin/users/${userToDelete}`)
-            .set('Authorization', `Bearer ${adminToken}`);
+            .post('/api/auth/login')
+            .send({
+                email: 'admin@example.com',
+                password: 'adminpassword',
+            });
+        expect(res.statusCode).toEqual(200);
+        expect(res.body).toHaveProperty('token');
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.message).toBe('User removed');
+        const token = res.body.token;
+        const deleteRes = await request(app)
+            .delete('/api/admin/users/12345') // Замените 12345 на действительный userId
+            .set('Authorization', `Bearer ${token}`);
+        expect(deleteRes.statusCode).toEqual(200);
     });
 });

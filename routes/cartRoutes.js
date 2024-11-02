@@ -1,11 +1,15 @@
 const express = require('express');
-const { getCart, addToCart, removeFromCart } = require('../controllers/cartController');
+const router = express.Router();
+const { addToCart, getCart, removeFromCart } = require('../controllers/cartController'); // Убедитесь, что названия функций совпадают
 const { protect } = require('../middleware/authMiddleware');
 
-const router = express.Router();
-
-router.get('/', protect, getCart);
+// Добавление продукта в корзину
 router.post('/add', protect, addToCart);
+
+// Получение корзины
+router.get('/', protect, getCart);
+
+// Удаление продукта из корзины
 router.post('/remove', protect, removeFromCart);
 
 module.exports = router;
