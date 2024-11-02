@@ -1,10 +1,12 @@
 const request = require('supertest');
 const { app, server } = require('../server');
 const User = require('../models/User');
+const Cart = require('../models/Cart');
 
 // Очищаем базу данных перед каждым тестом
 beforeEach(async () => {
     await User.deleteMany({});
+    await Cart.deleteMany({});
 });
 
 // Закрываем сервер после выполнения всех тестов

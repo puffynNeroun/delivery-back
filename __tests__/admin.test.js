@@ -1,6 +1,7 @@
 const request = require('supertest');
 const { app, server } = require('../server');
 const User = require('../models/User');
+const Cart = require('../models/Cart');
 
 // Очищаем базу данных перед каждым тестом
 beforeEach(async () => {
@@ -12,6 +13,7 @@ beforeEach(async () => {
         password: 'adminpassword',
         isAdmin: true,
     });
+    await Cart.deleteMany({});
 });
 
 // Закрываем сервер после выполнения всех тестов
@@ -27,11 +29,9 @@ describe('Admin API', () => {
     beforeAll(async () => {
         const res = await request(app)
             .post('/api/auth/login')
-            .send({
-                email: 'admin@example.com',
-                password: 'adminpassword',
-            });
+            .send({ email: 'admin@example.com', password: 'adminpassword' });
         adminToken = res.body.token;
+
     });
 
     it('should get all users (admin only)', async () => {
