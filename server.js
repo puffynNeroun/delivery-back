@@ -1,9 +1,10 @@
 const express = require('express');
-const dotenv = require('dotenv');
-const connectDB = require('./config/db');
+require('dotenv').config();
 
-dotenv.config();
-connectDB();
+const supabase = require('./config/db'); // Импортируем Supabase
+
+console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+console.log("SUPABASE_KEY:", process.env.SUPABASE_KEY);
 
 const app = express();
 app.use(express.json());
@@ -19,7 +20,6 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 const PORT = process.env.PORT || 5000;
 let server;
 
-// Запуск сервера
 if (process.env.NODE_ENV !== 'test') {
     server = app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);

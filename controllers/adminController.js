@@ -1,36 +1,28 @@
 const User = require('../models/User');
-const Order = require('../models/Order');
 
-const getAllUsers = async (req, res) => {
+// Получение всех пользователей (только для админов)
+const getUsers = async (req, res) => {
     try {
-        const users = await User.find({});
-        res.status(200).json(users);
+        const users = await User.find().select('-password'); // Не передаем пароли
+        res.json(users);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching users', error });
+        res.status(500).json({ message: 'Ошибка сервера' });
     }
 };
 
+// Удаление пользователя (только для админов)
 const deleteUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
-        if (user) {
-            await user.remove();
-            res.json({ message: 'User removed' });
-        } else {
-            res.status(404).json({ message: 'User not found' });
+        if (!user) {
+            return res.status(404).json({ message: 'Пользователь не найден' });
         }
+
+        await user.deleteOne();
+        res.json({ message: 'Пользователь удалён' });
     } catch (error) {
-        res.status(500).json({ message: 'Error deleting user' });
+        res.status(500).json({ message: 'Ошибка сервера' });
     }
 };
 
-const getAllOrders = async (req, res) => {
-    try {
-        const orders = await Order.find().populate('user', 'name email');
-        res.json(orders);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching orders' });
-    }
-};
-
-module.exports = { getAllUsers, deleteUser, getAllOrders };
+module.exports = { getUsers, deleteUser };
