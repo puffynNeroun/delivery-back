@@ -1,41 +1,35 @@
-const jwt = require('jsonwebtoken');
 const { supabase } = require('../config/db');
 
 const protect = async (req, res, next) => {
-    let token;
+    const token = req.headers.authorization?.split(' ')[1];
 
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        try {
-            token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!token) {
+        return res.status(401).json({ message: 'Нет токена, авторизация отклонена' });
+    }
 
-            // Получаем пользователя из Supabase
-            const { data: user, error } = await supabase
-                .from('users')
-                .select('id, email, is_admin')
-                .eq('id', decoded.id)
-                .single();
+    try {
+        const { data, error } = await supabase.auth.getUser(token);
 
-            if (!user || error) {
-                return res.status(401).json({ message: 'User not found' });
-            }
-
-            req.user = user; // Сохраняем пользователя в req
-            next();
-        } catch (error) {
-            console.error('Ошибка валидации токена:', error);
-            res.status(401).json({ message: 'Token invalid, authorization failed' });
+        if (error || !data.user) {
+            return res.status(401).json({ message: 'Неверный токен' });
         }
-    } else {
-        res.status(401).json({ message: 'No token, authorization denied' });
+
+        req.user = { id: data.user.id, email: data.user.email }; // Вызов ошибки
+        console.log("✅ Пользователь авторизован:", req.user); // Логируем
+
+        next();
+    } catch (error) {
+        console.error('Ошибка валидации токена:', error);
+        res.status(401).json({ message: 'Ошибка авторизации' });
     }
 };
 
+
 const admin = (req, res, next) => {
-    if (req.user && req.user.is_admin) {
+    if (req.user && req.user.user_metadata?.is_admin) {
         next();
     } else {
-        res.status(403).json({ message: 'Not authorized as admin' });
+        res.status(403).json({ message: 'Доступ запрещен' });
     }
 };
 
