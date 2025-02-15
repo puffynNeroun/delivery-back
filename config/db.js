@@ -1,5 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
-module.exports = supabase;
+if (!supabaseUrl || !supabaseKey) {
+    console.error("Ошибка: отсутствуют ключи Supabase");
+    process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+module.exports = { supabase };
