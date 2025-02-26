@@ -1,5 +1,4 @@
-const supabase = require('../config/db');
-
+const { supabase } = require('../config/db');
 // Получение всех продуктов
 const getProducts = async (req, res) => {
     try {

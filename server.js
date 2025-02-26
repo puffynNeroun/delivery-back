@@ -1,16 +1,21 @@
 const express = require('express');
+const morgan = require('morgan');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
-const supabase = require('./config/db'); // Импортируем Supabase
-
-console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
-console.log("SUPABASE_KEY:", process.env.SUPABASE_KEY);
-
 const app = express();
-app.use(express.json());
-app.use(require('cors')());
 
-// Настройка маршрутов
+// Middlewares
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(cookieParser());
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
+
+// Подключение маршрутов
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
@@ -22,7 +27,7 @@ let server;
 
 if (process.env.NODE_ENV !== 'test') {
     server = app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+        console.log(`🚀 Server running on port ${PORT}`);
     });
 } else {
     server = null;
