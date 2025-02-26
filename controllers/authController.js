@@ -1,6 +1,8 @@
 const { supabase } = require('../config/db');
 
 // 🔹 Регистрация пользователя
+
+
 const registerUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -10,29 +12,23 @@ const registerUser = async (req, res) => {
 
         const normalizedEmail = email.toLowerCase();
 
-        // 🔹 Проверяем, существует ли пользователь (попытка входа без реального входа)
-        const { data: existingUser, error: loginError } = await supabase.auth.signInWithPassword({
-            email: normalizedEmail,
-            password: 'fakePassword123' // Любой фейковый пароль
-        });
-
-        if (existingUser?.user) {
-            return res.status(400).json({ message: 'Пользователь с таким email уже зарегистрирован' });
-        }
-
-        // 🔹 Создаём пользователя в Supabase Auth
+        // 🔹 Попытка зарегистрировать пользователя
         const { data, error } = await supabase.auth.signUp({
             email: normalizedEmail,
             password
         });
 
-        if (error || !data?.user) {
+        // 🔹 Если Supabase вернул ошибку, значит пользователь уже существует
+        if (error) {
+            if (error.message.includes("User already registered")) {
+                return res.status(400).json({ message: 'Пользователь с таким email уже зарегистрирован' });
+            }
             console.error('Ошибка регистрации в Supabase:', error);
-            return res.status(400).json({ message: 'Ошибка регистрации', error: error?.message });
+            return res.status(400).json({ message: 'Ошибка регистрации', error: error.message });
         }
 
+        // 🔹 Успешная регистрация
         console.log('✅ Пользователь зарегистрирован в Supabase:', data.user.id);
-
         res.status(201).json({
             message: 'Регистрация успешна',
             user: {
@@ -40,6 +36,7 @@ const registerUser = async (req, res) => {
                 email: data.user.email
             }
         });
+
     } catch (error) {
         console.error('Ошибка регистрации:', error);
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
@@ -47,17 +44,21 @@ const registerUser = async (req, res) => {
 };
 
 
+
+
 // 🔹 Вход пользователя
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // 🔹 Попытка входа в систему
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
         if (error || !data?.user) {
             return res.status(401).json({ message: 'Неверные email или пароль' });
         }
 
+        // 🔹 Успешный вход
         const userId = data.user.id;
         const userEmail = data.user.email;
 
@@ -76,10 +77,12 @@ const loginUser = async (req, res) => {
                 email: userEmail
             }
         });
+
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
+
 
 // 🔹 Выход пользователя
 const logoutUser = async (req, res) => {
