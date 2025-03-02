@@ -1,12 +1,21 @@
 const { supabase } = require('../config/db');
 
 const protect = async (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Нет токена, авторизация отклонена' });
+    let token;
+
+    // ✅ 1. Проверяем `Authorization` заголовок
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+    // ✅ 2. Если `Authorization` нет, пробуем достать `access_token` из cookies
+    else if (req.cookies.access_token) {
+        token = req.cookies.access_token;
     }
 
-    const token = authHeader.split(' ')[1];
+    // ✅ 3. Если токена нет – отклоняем запрос
+    if (!token) {
+        return res.status(401).json({ message: 'Нет токена, авторизация отклонена' });
+    }
 
     try {
         // ✅ Проверяем токен через Supabase
