@@ -1,55 +1,89 @@
-const Cart = require('../models/Cart');
+const { supabase } = require('../config/db');
 
+// 🔹 Получение корзины пользователя
 const getCart = async (req, res) => {
     try {
-        const cart = await Cart.findOne({ user: req.user._id }).populate('items.product');
-        res.json(cart || { items: [] });
+        if (!req.user) return res.status(401).json({ message: 'Не авторизован' });
+
+        const { data: cartItems, error } = await supabase
+            .from('cart')
+            .select('id, product_id, quantity')
+            .eq('user_id', req.user.id);
+
+        if (error) throw error;
+
+        res.json({ items: cartItems || [] });
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching cart' });
+        res.status(500).json({ message: 'Ошибка при получении корзины', error: error.message });
     }
 };
 
+// 🔹 Добавление товара в корзину
 const addToCart = async (req, res) => {
-    const { productId, quantity } = req.body;
     try {
-        let cart = await Cart.findOne({ user: req.user._id });
-        if (!cart) {
-            cart = new Cart({ user: req.user._id, items: [] });
+        if (!req.user) return res.status(401).json({ message: 'Не авторизован' });
+
+        const { product_id, quantity } = req.body;
+        if (!product_id || quantity <= 0) {
+            return res.status(400).json({ message: 'Неверные данные' });
         }
 
-        const itemIndex = cart.items.findIndex(item => item.product.toString() === productId);
-        if (itemIndex >= 0) {
-            cart.items[itemIndex].quantity += quantity;
+        // ✅ Проверяем, есть ли уже этот товар в корзине
+        const { data: existingItem, error: checkError } = await supabase
+            .from('cart')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .eq('product_id', product_id)
+            .single();
+
+        if (checkError && checkError.code !== 'PGRST116') throw checkError;
+
+        if (existingItem) {
+            const { error: updateError } = await supabase
+                .from('cart')
+                .update({ quantity: existingItem.quantity + quantity })
+                .eq('id', existingItem.id);
+
+            if (updateError) throw updateError;
         } else {
-            cart.items.push({ product: productId, quantity });
+            const { error: insertError } = await supabase
+                .from('cart')
+                .insert([{ user_id: req.user.id, product_id, quantity }]);
+
+            if (insertError) throw insertError;
         }
 
-        await cart.save();
-        res.json(cart);
+        res.json({ message: 'Товар добавлен в корзину' });
     } catch (error) {
-        res.status(500).json({ message: 'Error adding to cart' });
+        res.status(500).json({ message: 'Ошибка при добавлении в корзину', error: error.message });
     }
 };
 
+// 🔹 Удаление товара из корзины
 const removeFromCart = async (req, res) => {
-    const { productId } = req.body;
     try {
-        const cart = await Cart.findOne({ user: req.user._id });
-        if (!cart) {
-            return res.status(404).json({ message: 'Cart not found' });
+        if (!req.user) return res.status(401).json({ message: 'Не авторизован' });
+
+        const { product_id } = req.body;
+        if (!product_id) return res.status(400).json({ message: 'product_id обязателен' });
+
+        const { data, error } = await supabase
+            .from('cart')
+            .delete()
+            .eq('user_id', req.user.id)
+            .eq('product_id', product_id)
+            .select('*');
+
+        if (error) throw error;
+
+        if (data.length === 0) {
+            return res.status(404).json({ message: 'Товар не найден в корзине' });
         }
 
-        const productIndex = cart.items.findIndex(item => item.product.toString() === productId);
-        if (productIndex === -1) {
-            return res.status(404).json({ message: 'Product not found in cart' });
-        }
-
-        cart.items.splice(productIndex, 1);
-        await cart.save();
-
-        res.status(200).json(cart);
+        res.json({ message: 'Товар удалён из корзины', deletedItem: data });
     } catch (error) {
-        res.status(500).json({ message: 'Error removing product from cart', error });
+        console.error('Ошибка при удалении товара:', error);
+        res.status(500).json({ message: 'Ошибка при удалении товара', error: error.message });
     }
 };
 

@@ -1,27 +1,28 @@
-const User = require('../models/User');
+const { supabase } = require('../config/db');
 
-// Получение всех пользователей (только для админов)
+// 🔹 Получение всех пользователей (только для админов)
 const getUsers = async (req, res) => {
     try {
-        const users = await User.find().select('-password'); // Не передаем пароли
+        const { data: users, error } = await supabase.auth.admin.listUsers();
+        if (error) throw error;
+
         res.json(users);
     } catch (error) {
-        res.status(500).json({ message: 'Ошибка сервера' });
+        res.status(500).json({ message: 'Ошибка при получении пользователей', error: error.message });
     }
 };
 
-// Удаление пользователя (только для админов)
+// 🔹 Удаление пользователя (только для админов)
 const deleteUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
-        if (!user) {
-            return res.status(404).json({ message: 'Пользователь не найден' });
-        }
+        const { id } = req.params;
 
-        await user.deleteOne();
+        const { error } = await supabase.auth.admin.deleteUser(id);
+        if (error) throw error;
+
         res.json({ message: 'Пользователь удалён' });
     } catch (error) {
-        res.status(500).json({ message: 'Ошибка сервера' });
+        res.status(500).json({ message: 'Ошибка при удалении пользователя', error: error.message });
     }
 };
 
