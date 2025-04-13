@@ -27,7 +27,8 @@ const protect = async (req, res, next) => {
         req.user = {
             id: user.id,
             email: user.email,
-            isAdmin: user.email === 'rememberfox00@gmail.com' // или проверь по таблице `users` с ролями
+            isAdmin: user.email === process.env.ADMIN_EMAIL
+
         };
         next();
     } catch (error) {

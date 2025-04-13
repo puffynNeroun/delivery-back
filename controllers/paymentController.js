@@ -27,5 +27,32 @@ const handlePaymentWebhook = async (req, res) => {
 
     return res.json({ message: "Статус заказа обновлен" });
 };
+const markOrderAsPaid = async (req, res) => {
+    const { orderId } = req.params;
 
-module.exports = { processPayment, handlePaymentWebhook };
+    if (!orderId || typeof orderId !== 'string') {
+        return res.status(400).json({ message: 'orderId обязателен и должен быть строкой' });
+    }
+
+    const { data, error } = await supabase
+        .from('orders')
+        .update({ payment_status: 'paid' })
+        .eq('id', orderId)
+        .select()
+        .maybeSingle(); // 👈 безопасный аналог single()
+
+    if (error || !data) {
+        console.error('Ошибка при обновлении оплаты:', error);
+        return res.status(404).json({ message: 'Заказ не найден или не обновлён', error });
+    }
+
+    return res.json({ message: 'Заказ помечен как оплаченный', order: data });
+};
+
+
+
+
+
+
+
+module.exports = { processPayment, handlePaymentWebhook, markOrderAsPaid};

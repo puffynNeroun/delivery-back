@@ -1,10 +1,15 @@
 const express = require('express');
-const { processPayment, handlePaymentWebhook } = require('../controllers/paymentController');
-const { protect } = require('../middleware/authMiddleware');
+const {
+    processPayment,
+    handlePaymentWebhook,
+    markOrderAsPaid,
+} = require('../controllers/paymentController');
+const { protect, admin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.post('/pay', protect, processPayment); // ✔ Теперь `processPayment` существует
-router.post('/webhook', handlePaymentWebhook); // ✔ Обрабатываем уведомления от платежной системы
+router.post('/pay', protect, processPayment);
+router.post('/webhook', handlePaymentWebhook);
+router.patch('/mark-paid/:orderId', protect, admin, markOrderAsPaid); // 👈 Новый маршрут
 
 module.exports = router;

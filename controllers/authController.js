@@ -50,7 +50,12 @@ const loginUser = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 дней
         });
 
-        res.json({ message: 'Вход успешен', user: { id: data.user.id, email: data.user.email } });
+        res.json({
+            message: 'Вход успешен',
+            user: { id: data.user.id, email: data.user.email },
+            token: data.session.access_token
+        });
+
 
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
@@ -96,4 +101,17 @@ const logoutUser = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, refreshToken, logoutUser };
+const getMe = async (req, res) => {
+    try {
+        res.status(200).json({
+            id: req.user.id,
+            email: req.user.email,
+            isAdmin: req.user.isAdmin
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при получении профиля', error: error.message });
+    }
+};
+
+
+module.exports = { registerUser, loginUser, refreshToken, logoutUser, getMe };

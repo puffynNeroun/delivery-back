@@ -104,7 +104,8 @@ const getOrderDetails = async (req, res) => {
             return res.status(403).json({ message: 'Нет доступа к заказу' });
         }
 
-        return res.json({ order });
+        res.status(200).json({ id: order.id, ...order }); // безопаснее
+
     } catch (error) {
         console.error('❌ Ошибка при получении заказа:', error);
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
@@ -131,6 +132,7 @@ const getUserOrders = async (req, res) => {
 
         if (error) throw error;
 
+        res.set('Content-Range', `orders 0-${data.length - 1}/${data.length}`);
         res.json(data);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
@@ -198,9 +200,37 @@ const getAllOrders = async (req, res) => {
         const { data, error } = await query;
         if (error) throw error;
 
+        res.set('Content-Range', `orders 0-${data.length - 1}/${data.length}`);
         res.json(data);
+
+
     } catch (error) {
         console.error('Ошибка при получении заказов:', error);
+        res.status(500).json({ message: 'Ошибка сервера', error: error.message });
+    }
+};
+
+const deleteOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Удаляем связанные товары
+        await supabase
+            .from('order_items')
+            .delete()
+            .eq('order_id', id);
+
+        // Удаляем сам заказ
+        const { error } = await supabase
+            .from('orders')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        res.status(200).json({ data: { id } }); // важно для react-admin
+    } catch (error) {
+        console.error('❌ Ошибка при удалении заказа:', error);
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
@@ -209,4 +239,9 @@ const getAllOrders = async (req, res) => {
 
 
 
-module.exports = { createOrder, getUserOrders, updateOrderStatus, getOrderDetails, getAllOrders};
+
+
+
+
+
+module.exports = { createOrder, getUserOrders, updateOrderStatus, getOrderDetails, getAllOrders, deleteOrder };
