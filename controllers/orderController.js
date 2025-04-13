@@ -120,7 +120,7 @@ const getUserOrders = async (req, res) => {
 
         let query = supabase
             .from('orders')
-            .select('*, order_items(*)')
+            .select('*, order_items(*, products(name))')
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
 
@@ -150,26 +150,35 @@ const updateOrderStatus = async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
 
+        const allowedStatuses = ['новый', 'в доставке', 'доставлен', 'отменён'];
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                message: `Недопустимый статус. Допустимые значения: ${allowedStatuses.join(', ')}`,
+            });
+        }
+
         // Проверяем, оплачен ли заказ
         const { data: order, error: orderError } = await supabase
             .from('orders')
             .select('payment_status')
             .eq('id', id)
-            .single();
+            .maybeSingle();
 
-        if (orderError || !order) return res.status(404).json({ message: 'Заказ не найден' });
+        if (orderError || !order) {
+            return res.status(404).json({ message: 'Заказ не найден' });
+        }
 
         if (order.payment_status !== 'paid') {
             return res.status(400).json({ message: 'Заказ ещё не оплачен!' });
         }
 
-        // Обновляем статус заказа
+        // Обновляем статус
         const { data, error } = await supabase
             .from('orders')
             .update({ status })
             .eq('id', id)
             .select()
-            .single();
+            .maybeSingle();
 
         if (error) throw error;
 
@@ -179,6 +188,7 @@ const updateOrderStatus = async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
+
 
 const getAllOrders = async (req, res) => {
     try {
