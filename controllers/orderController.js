@@ -32,6 +32,7 @@ const createOrder = async (req, res) => {
             const product = products.find(p => p.id === item.product_id);
             if (product) calculatedTotal += product.price * item.quantity;
         });
+        const { paymentMethod, shippingAddress, comment } = req.body;
 
         // Создаём заказ
         const { data: order, error: orderError } = await supabase
@@ -39,8 +40,9 @@ const createOrder = async (req, res) => {
             .insert([{
                 user_id: userId,
                 total_price: calculatedTotal,
-                payment_method: req.body.paymentMethod || "Не указан",
-                shipping_address: req.body.shippingAddress || "Не указан",
+                payment_method: paymentMethod || "Не указан",
+                shipping_address: shippingAddress || "Не указан",
+                comment: comment || null,
                 status: 'новый',
                 payment_status: 'pending'
             }])
@@ -79,7 +81,8 @@ const createOrder = async (req, res) => {
 
         res.status(201).json({ message: 'Заказ успешно создан', order: fullOrder });
     } catch (error) {
-        console.error('❌ Ошибка при создании заказа:', error);
+        console.error('❌ Ошибка при получении заказов:', error.message || error);
+
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
