@@ -24,7 +24,11 @@ const protect = async (req, res, next) => {
             return res.status(401).json({ message: 'Неверный или истекший токен' });
         }
 
-        req.user = { id: user.id, email: user.email };
+        req.user = {
+            id: user.id,
+            email: user.email,
+            isAdmin: user.email === 'rememberfox00@gmail.com' // или проверь по таблице `users` с ролями
+        };
         next();
     } catch (error) {
         console.error('❌ Ошибка авторизации:', error);

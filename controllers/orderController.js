@@ -115,17 +115,28 @@ const getOrderDetails = async (req, res) => {
 const getUserOrders = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { data: orders, error } = await supabase
+        const { status } = req.query;
+
+        let query = supabase
             .from('orders')
-            .select('*, order_items(*)') // <-- исправлено!
-            .eq('user_id', userId);
+            .select('*, order_items(*)')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (status) {
+            query = query.eq('status', status);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
-        res.json(orders);
+
+        res.json(data);
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
+
 
 // 🔹 Обновление статуса заказа (только админ)
 const updateOrderStatus = async (req, res) => {
@@ -167,4 +178,35 @@ const updateOrderStatus = async (req, res) => {
     }
 };
 
-module.exports = { createOrder, getUserOrders, updateOrderStatus, getOrderDetails };
+const getAllOrders = async (req, res) => {
+    try {
+        if (!req.user.isAdmin) {
+            return res.status(403).json({ message: 'Доступ запрещён' });
+        }
+
+        const { status } = req.query;
+
+        let query = supabase
+            .from('orders')
+            .select('*, order_items(*, products(*))')
+            .order('created_at', { ascending: false });
+
+        if (status) {
+            query = query.eq('status', status);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        res.json(data);
+    } catch (error) {
+        console.error('Ошибка при получении заказов:', error);
+        res.status(500).json({ message: 'Ошибка сервера', error: error.message });
+    }
+};
+
+
+
+
+
+module.exports = { createOrder, getUserOrders, updateOrderStatus, getOrderDetails, getAllOrders};
