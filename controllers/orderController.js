@@ -32,7 +32,8 @@ const createOrder = async (req, res) => {
             const product = products.find(p => p.id === item.product_id);
             if (product) calculatedTotal += product.price * item.quantity;
         });
-        const { paymentMethod, shippingAddress, comment } = req.body;
+        const { paymentMethod, shippingAddress, comment, phoneNumber } = req.body;
+
 
         // Создаём заказ
         const { data: order, error: orderError } = await supabase
@@ -43,8 +44,10 @@ const createOrder = async (req, res) => {
                 payment_method: paymentMethod || "Не указан",
                 shipping_address: shippingAddress || "Не указан",
                 comment: comment || null,
+                phone_number: phoneNumber || null,
                 status: 'новый',
-                payment_status: 'pending'
+                payment_status: 'pending',
+
             }])
             .select()
             .single();
