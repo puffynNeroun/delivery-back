@@ -7,16 +7,36 @@ const getCart = async (req, res) => {
 
         const { data: cartItems, error } = await supabase
             .from('cart')
-            .select('id, product_id, quantity')
+            .select(`
+                id,
+                quantity,
+                product_id,
+                products (
+                    id,
+                    name,
+                    price,
+                    image,
+                    category,
+                    description
+                )
+            `)
             .eq('user_id', req.user.id);
 
         if (error) throw error;
 
-        res.json({ items: cartItems || [] });
+        const enrichedItems = cartItems.map((item) => ({
+            id: item.id,
+            quantity: item.quantity,
+            productId: item.product_id,
+            ...item.products
+        }));
+
+        res.json({ items: enrichedItems });
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при получении корзины', error: error.message });
     }
 };
+
 
 // 🔹 Добавление товара в корзину
 const addToCart = async (req, res) => {
@@ -110,5 +130,22 @@ const removeFromCart = async (req, res) => {
     }
 };
 
+const clearCart = async (req, res) => {
+    try {
+        if (!req.user) return res.status(401).json({ message: 'Не авторизован' });
 
-module.exports = { getCart, addToCart, removeFromCart };
+        const { error } = await supabase
+            .from('cart')
+            .delete()
+            .eq('user_id', req.user.id);
+
+        if (error) throw error;
+
+        res.json({ message: 'Корзина очищена' });
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при очистке корзины', error: error.message });
+    }
+};
+
+
+module.exports = { getCart, addToCart, removeFromCart, clearCart };

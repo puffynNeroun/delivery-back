@@ -15,15 +15,20 @@ const registerUser = async (req, res) => {
             password
         });
 
-        if (error) {
-            return res.status(400).json({ message: 'Ошибка регистрации', error: error.message });
+        if (error || !data?.user) {
+            return res.status(400).json({ message: 'Ошибка регистрации', error: error?.message });
         }
 
-        res.status(201).json({ message: 'Регистрация успешна', user: data.user });
+        res.status(200).json({
+            message: 'Письмо с подтверждением отправлено. Проверьте почту.'
+        });
+
     } catch (error) {
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
+
+
 
 // 🔹 Вход пользователя
 const loginUser = async (req, res) => {
@@ -104,14 +109,18 @@ const logoutUser = async (req, res) => {
 const getMe = async (req, res) => {
     try {
         res.status(200).json({
-            id: req.user.id,
-            email: req.user.email,
-            isAdmin: req.user.isAdmin
+            user: {
+                id: req.user.id,
+                email: req.user.email,
+                isAdmin: req.user.isAdmin,
+                name: req.user.name || "" // можно пустую строку, если name не используется
+            }
         });
     } catch (error) {
         res.status(500).json({ message: 'Ошибка при получении профиля', error: error.message });
     }
 };
+
 
 
 module.exports = { registerUser, loginUser, refreshToken, logoutUser, getMe };

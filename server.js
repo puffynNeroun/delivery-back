@@ -31,6 +31,8 @@ app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/order_items', require('./routes/orderItemRoutes'));
+app.use('/api/discounts', require('./routes/discountRoutes'));
+
 
 
 const PORT = process.env.PORT || 5000;

@@ -2,7 +2,15 @@ const { supabase } = require('../config/db');
 // Получение всех продуктов
 const getProducts = async (req, res) => {
     try {
-        const { data, error } = await supabase.from('products').select('*');
+        const { category } = req.query;
+
+        let query = supabase.from('products').select('*');
+
+        if (category && category !== 'Все') {
+            query = query.eq('category', category);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             throw error;
@@ -13,6 +21,7 @@ const getProducts = async (req, res) => {
         res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
+
 
 // Добавление продукта (только админ)
 const createProduct = async (req, res) => {
@@ -77,4 +86,22 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-module.exports = { getProducts, createProduct, updateProduct, deleteProduct };
+const getPopularProducts = async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('products') // название твоей таблицы
+            .select('*');
+
+        if (error) throw new Error(error.message);
+
+        // Возвращаем случайные 4
+        const shuffled = data.sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 8);
+
+        res.json(selected);
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка получения популярных товаров', error: error.message });
+    }
+};
+
+module.exports = { getProducts, createProduct, updateProduct, deleteProduct, getPopularProducts };
